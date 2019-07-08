@@ -1,0 +1,106 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "namePrefix": {
+            "type": "string",
+            "defaultValue": "io"
+        },
+        "resourceName": {
+            "type": "string"
+        },
+        "environment": {
+            "type": "string"
+        },
+        "instanceCount": {
+            "type": "int"
+        },
+        "location": {
+            "type": "string"
+        },
+        "publicIPPrefixes": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "resourceName": "[io.Name(parameters('namePrefix'), parameters('environment'), parameters('resourceName'))]"
+    },
+    "resources": [
+        {
+            "name": "[concat(variables('resourceName'), padleft(copyindex(1),2,'0'))]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2018-08-01",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "copy": {
+                "name": "Loop",
+                "count": "[parameters('instanceCount')]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "publicIPPrefix": {
+                    "id": "[resourceId('Microsoft.Network/publicIPPrefixes', parameters('publicIPPrefixes'))]"
+                }
+            },
+            "resources": [
+                {
+                    "name": "[io.lockName(variables('resourceName'), copyindex(1))]",
+                    "type": "providers/locks",
+                    "apiVersion": "2017-04-01",
+                    "dependsOn": [
+                        "[concat(variables('resourceName'), padleft(copyindex(1),2,'0'))]"
+                    ],
+                    "properties": {
+                        "level": "CannotDelete",
+                        "notes": "Do not delete!"
+                    }
+                }
+            ]
+        }
+    ],
+    "functions": [
+        {
+            "namespace": "io",
+            "members": {
+                "Name": {
+                    "parameters": [
+                        {
+                            "name": "namePrefix",
+                            "type": "string"
+                        },
+                        {
+                            "name": "environment",
+                            "type": "string"
+                        },
+                        {
+                            "name": "resourceName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[toLower(concat(parameters('namePrefix'), '-', parameters('environment'), '-', parameters('resourceName')))]"
+                    }
+                },
+                "lockName": {
+                    "parameters": [
+                        {
+                            "name": "resourceName",
+                            "type": "string"
+                        },
+                        {
+                            "name": "instanceCount",
+                            "type": "int"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[toLower(concat('/Microsoft.Authorization/', parameters('resourceName'), padleft(parameters('instanceCount'),2,'0'), '-lock'))]"
+                    }
+                }
+            }
+        } 
+    ]
+}
