@@ -1,0 +1,142 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "namePrefix": {
+            "type": "string",
+            "defaultValue": "io"
+        },
+        "resourceName": {
+            "type": "string"
+        },
+        "environment": {
+            "type": "string"
+        },
+        "instanceCount": {
+            "type": "int",
+            "defaultValue": 1
+        },
+        "location": {
+            "type": "string"
+        },
+        "workspaceResourceGroup": {
+            "type": "string",
+            "defaultValue": "## TO BE DEFINED ##"
+        },
+        "workspaceName": {
+            "type": "string",
+            "defaultValue": "## TO BE DEFINED ##"
+        }
+    },
+    "variables": {
+        "resourceName": "[io.Name(parameters('namePrefix'), parameters('environment'), parameters('resourceName'))]"
+    },
+    "resources": [
+        {
+            "type": "## TO BE DEFINED ##",
+            "name": "[concat(variables('resourceName'), padleft(copyindex(1), 2, '0'))]",
+            "apiVersion": "## TO BE DEFINED ##",
+            "location": "[parameters('location')]",
+            "copy": {
+                "name": "Loop",
+                "count": "[parameters('instanceCount')]"
+            },
+            "tags": {},
+            "resources": [
+                {
+                    "type": "## TO BE DEFINED ##",
+                    "name": "[io.lockName(variables('resourceName'), copyindex(1))]",
+                    "apiVersion": "2015-06-01",
+                    "dependsOn": [
+                        "[concat(variables('resourceName'), padleft(copyindex(1), 2, '0'))]"
+                    ],
+                    "properties": {
+                        "level": "CannotDelete",
+                        "notes": "Key Vault should not be deleted"
+                    }
+                },
+                {
+                    "type": "providers/diagnosticSettings",
+                    "name": "Microsoft.Insights/service",
+                    "dependsOn": [
+                        "[concat(variables('resourceName'), padleft(copyindex(1), 2 ,'0'))]"
+                    ],
+                    "apiVersion": "2015-07-01",
+                    "location": "[parameters('location')]",
+                    "properties": {
+                        "workspaceId": "[io.workspace(parameters('workspaceName'), parameters('workspaceResourceGroup'))]",
+                        "logs": [
+                            {
+                                "category": "AuditEvent",
+                                "enabled": true,
+                                "retentionPolicy": {
+                                    "days": 30,
+                                    "enabled": true
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "functions": [
+        {
+            "namespace": "io",
+            "members": {
+                "Name": {
+                    "parameters": [
+                        {
+                            "name": "namePrefix",
+                            "type": "string"
+                        },
+                        {
+                            "name": "environment",
+                            "type": "string"
+                        },
+                        {
+                            "name": "resourceName",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[toLower(concat(parameters('namePrefix'), '-', parameters('environment'), '-', parameters('resourceName')))]"
+                    }
+                },
+                "lockName": {
+                    "parameters": [
+                        {
+                            "name": "resourceName",
+                            "type": "string"
+                        },
+                        {
+                            "name": "instanceCount",
+                            "type": "int"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[toLower(concat('/Microsoft.Authorization/', parameters('resourceName'), padleft(parameters('instanceCount'), 2, '0'), '-lock'))]"
+                    }
+                },
+                "workspace": {
+                    "parameters": [
+                        {
+                            "name": "workspaceName",
+                            "type": "string"
+                        },
+                        {
+                            "name": "workspaceResourceGroup",
+                            "type": "string"
+                        }
+                    ],
+                    "output": {
+                        "type": "string",
+                        "value": "[resourceId(parameters('workspaceResourceGroup'), 'Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]"
+                    }
+                }
+            }
+        }
+    ]
+}
