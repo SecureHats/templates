@@ -33,7 +33,7 @@
     },
     "resources": [
         {
-            "type": "## TO BE DEFINED ##",
+            "type": "ProviderNamespace/ResourceType",
             "name": "[concat(variables('resourceName'), padleft(copyindex(1), 2, '0'))]",
             "apiVersion": "## TO BE DEFINED ##",
             "location": "[parameters('location')]",
@@ -44,9 +44,9 @@
             "tags": {},
             "resources": [
                 {
-                    "type": "## TO BE DEFINED ##",
+                    "type": "providers/locks",
                     "name": "[io.lockName(variables('resourceName'), copyindex(1))]",
-                    "apiVersion": "2015-06-01",
+                    "apiVersion": "2016-09-01",
                     "dependsOn": [
                         "[concat(variables('resourceName'), padleft(copyindex(1), 2, '0'))]"
                     ],
@@ -58,20 +58,20 @@
                 {
                     "type": "providers/diagnosticSettings",
                     "name": "Microsoft.Insights/service",
-                    "dependsOn": [
-                        "[concat(variables('resourceName'), padleft(copyindex(1), 2 ,'0'))]"
-                    ],
-                    "apiVersion": "2015-07-01",
+                    "apiVersion": "2017-05-01-preview",
                     "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[concat(variables('resourceName'), padleft(copyindex(1), 2 , '0'))]"
+                    ],
                     "properties": {
                         "workspaceId": "[io.workspace(parameters('workspaceName'), parameters('workspaceResourceGroup'))]",
-                        "logs": [
+                        "metrics": [
                             {
-                                "category": "AuditEvent",
+                                "category": "AllMetrics",
                                 "enabled": true,
                                 "retentionPolicy": {
-                                    "days": 30,
-                                    "enabled": true
+                                    "enabled": true,
+                                    "days": 0
                                 }
                             }
                         ]
