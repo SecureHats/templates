@@ -1,0 +1,172 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "virtualNetworkResourceGroup": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "virtualNetworkName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "subnetName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "zoneRedundant": {
+      "type": "bool",
+      "defaultValue": false
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "workspaceResourceId": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "azTags": {
+      "type": "object",
+      "defaultValue": {}
+    },
+    "keyVaultName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "keyName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "customerManagedKey": {
+      "type": "bool",
+      "defaultValue": false
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "Premium",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium"
+      ]
+    },
+    "skuCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "allowedValues": [
+        1,
+        2,
+        4
+      ]
+    },
+    "logRetentionInDays": {
+      "type": "int",
+      "defaultValue": 14,
+      "maxValue": 365,
+      "minValue": 0
+    }
+  },
+  "functions": [],
+  "resources": [
+    {
+      "type": "Microsoft.ServiceBus/namespaces",
+      "apiVersion": "2021-01-01-preview",
+      "name": "[parameters('resourceName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('azTags')]",
+      "sku": {
+        "name": "[parameters('skuName')]",
+        "capacity": "[parameters('skuCapacity')]"
+      },
+      "properties": {
+        "zoneRedundant": "[parameters('zoneRedundant')]",
+        "encryption": "[if(parameters('customerManagedKey'), createObject('keySource', 'Microsoft.KeyVault', 'keyVaultProperties', createArray(createObject('keyName', parameters('keyName'), 'keyVaultUri', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2021-06-01-preview').vaultUri))), null())]"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      }
+    },
+    {
+      "condition": "[not(equals(parameters('skuName'), 'Basic'))]",
+      "type": "Microsoft.ServiceBus/namespaces/networkRuleSets",
+      "apiVersion": "2021-01-01-preview",
+      "name": "[concat(format('{0}/default', parameters('resourceName')))]",
+      "properties": {
+        "defaultAction": "Deny",
+        "virtualNetworkRules": [
+          {
+            "subnet": {
+              "id": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('virtualNetworkResourceGroup')), 'Microsoft.Network/virtualNetworks/subnets', split(format('{0}/{1}', parameters('virtualNetworkName'), parameters('subnetName')), '/')[0], split(format('{0}/{1}', parameters('virtualNetworkName'), parameters('subnetName')), '/')[1])]"
+            },
+            "ignoreMissingVnetServiceEndpoint": true
+          }
+        ],
+        "ipRules": []
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', parameters('resourceName'))]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('workspaceResourceId')))]",
+      "type": "microsoft.insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[format('Microsoft.ServiceBus/namespaces/{0}', parameters('resourceName'))]",
+      "name": "service",
+      "properties": {
+        "workspaceId": "[parameters('workspaceResourceId')]",
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', parameters('resourceName'))]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('storageAccountName')))]",
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[format('Microsoft.ServiceBus/namespaces/{0}', parameters('resourceName'))]",
+      "name": "storageaccount-log",
+      "properties": {
+        "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+        "logs": [
+          {
+            "enabled": true,
+            "category": "OperationalLogs",
+            "retentionPolicy": {
+              "enabled": "[not(equals(parameters('logRetentionInDays'), 0))]",
+              "days": "[parameters('logRetentionInDays')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/locks",
+      "apiVersion": "2016-09-01",
+      "scope": "[format('Microsoft.ServiceBus/namespaces/{0}', parameters('resourceName'))]",
+      "name": "[concat(format('{0} -lock', parameters('resourceName')))]",
+      "properties": {
+        "level": "CanNotDelete",
+        "notes": "resource should not be deleted manually"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', parameters('resourceName'))]"
+      ]
+    }
+  ]
+}
