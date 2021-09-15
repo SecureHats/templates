@@ -3,7 +3,7 @@ param serviceBusNamespaceName string
 @description('Array of queues and properties')
 param queueNames array = [
   {
-    queueName: 'default'
+    queueName: 'queue1'
     queueSize: 1024
     defaultMessageTimeToLive: 'P14DT0H0M0S'
     lockDuration: 30
