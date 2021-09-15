@@ -3,14 +3,14 @@ param serviceBusNamespaceName string
 @description('Array of queues and properties')
 param topicNames array = [
   {
-    topicName: 'default'
+    topicName: 'topic1'
     topicSize: 1024
     defaultMessageTimeToLive: 'P14DT0H0M0S'
     enableDuplicateDetection: false
     duplicateDetectionWindow: 'P0DT0H0M30S'
     enableBatchedOperations: false
     supportOrdering: false
-    autoDeleteOnIdle: 'P0DT0H0M10S'
+    autoDeleteOnIdle: 'P0DT0H5M0S'
     enablePartitioning: false
     enableExpress: false
   }
