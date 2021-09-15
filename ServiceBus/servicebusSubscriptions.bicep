@@ -13,7 +13,7 @@ param subscriptionNames array = [
     deadLetteringOnFilterEvaluationExceptions: false
     duplicateDetectionWindow: 'P0DT0H0M30S'
     enableBatchedOperations: false
-    autoDeleteOnIdle: 'P0DT0H0M10S'
+    autoDeleteOnIdle: 'P0DT0H5M0S'
     forwardTo: ''
   }
 ]
@@ -30,6 +30,6 @@ resource serviceBusTopic 'Microsoft.ServiceBus/namespaces/topics/subscriptions@2
     duplicateDetectionHistoryTimeWindow: item.duplicateDetectionWindow
     enableBatchedOperations: item.enableBatchedOperations
     autoDeleteOnIdle: item.autoDeleteOnIdle
-    forwardTo: item.forwardTo ? item.forwardTo : null 
+    forwardTo: !empty(item.forwardTo) ? item.forwardTo : null 
   }
 }]
