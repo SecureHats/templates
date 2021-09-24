@@ -104,28 +104,28 @@
             "metadata": {
                 "description": "Name of the Virtual Network"
             },
-            "defaultValue": "vnet-linux"
+            "defaultValue": "rdk-vnet"
         },
         "virtualNetworkAddressRange": {
             "type": "string",
             "metadata": {
                 "description": "Address Range of the virtual network"
             },
-            "defaultValue": "192.168.0.0/16"
+            "defaultValue": "172.10.0.0/16"
         },
         "subnetName": {
             "type": "string",
             "metadata": {
                 "description": "Name of the subnet"
             },
-            "defaultValue": "snet-linux"
+            "defaultValue": "default"
         },
         "subnetRange": {
             "type": "string",
             "metadata": {
                 "description": "Address Range of the subnet"
             },
-            "defaultValue": "192.168.2.0/24"
+            "defaultValue": "172.10.1.0/24"
         },
         "azureBastionSubnetRange": {
             "type": "string",
